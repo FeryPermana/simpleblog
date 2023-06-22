@@ -11,7 +11,8 @@
         <!-- /.card-header -->
         <!-- form start -->
         <form action="{{ $url }}"
-            method="POST">
+            method="POST"
+            enctype="multipart/form-data">
             @csrf
             @if ($method == 'update')
                 @method('PUT')
@@ -35,9 +36,22 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <input type="file"
-                            class="dropify"
-                            data-default-file="url_of_your_file" />
+                        <div class="form-group">
+                            <label for="cover">Cover</label>
+                            <input type="file"
+                                class="form-control @error('cover') border-danger @enderror"
+                                id="cover"
+                                name="cover"
+                                onchange="previewFile()">
+                            <img id="previewImg"
+                                src="{{ @$post->cover_url }}"
+                                width="100" />
+                            @error('cover')
+                                <div class="text-danger">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
                     </div>
                 </div>
                 <div class="row">
@@ -103,7 +117,6 @@
     @push('scripts')
         <script src="{{ asset('plugins/bootstrap-switch/js/bootstrap-switch.min.js') }}"></script>
         <script src="{{ asset('plugins/summernote/summernote-bs4.min.js') }}"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.2/js/dropify.min.js"></script>
         <script>
             $(document).ready(function() {
                 $("input[data-bootstrap-switch]").each(function() {
@@ -119,9 +132,21 @@
                     mode: "htmlmixed",
                     theme: "monokai"
                 });
-
-                $('.dropify').dropify();
             });
+
+            function previewFile(input) {
+                var file = $("input[type=file]").get(0).files[0];
+
+                if (file) {
+                    var reader = new FileReader();
+
+                    reader.onload = function() {
+                        $("#previewImg").attr("src", reader.result);
+                    }
+
+                    reader.readAsDataURL(file);
+                }
+            }
         </script>
     @endpush
     @include('layouts.partials.publish')

@@ -15,8 +15,9 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::paginate(10 ?? $_GET['row']);
-        return view('dashboard.post.index', compact('posts'));
+        $categories = Category::wherePublishment('published')->get();
+        $posts = Post::filter(request())->paginate(10 ?? $_GET['row']);
+        return view('dashboard.post.index', compact('posts', 'categories'));
     }
 
     /**
@@ -38,21 +39,29 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|unique:posts',
-            'body' => 'required',
-            'category' => 'required',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|unique:posts',
+                'body' => 'required',
+                'category' => 'required',
+            ]);
 
-        $post = new Post();
-        $post->name = $request->name;
-        $post->body = $request->body;
-        $post->category_id = $request->category;
-        $post->slug = Str::slug($request->name);
-        $post->publishment = $request->publishment == 'on' ? 'published' : 'draft';
-        $post->save();
+            $post = new Post();
+            $post->name = $request->name;
+            $post->body = $request->body;
+            $post->category_id = $request->category;
+            $post->slug = Str::slug($request->name);
+            $post->publishment = $request->publishment == 'on' ? 'published' : 'draft';
+            $post->save();
 
-        return redirect()->route('dashboard.post.index')->with('success', 'Artikel berhasil dibuat');
+            if ($request->hasFile('cover') && $request->file('cover')->isValid()) {
+                $post->addMediaFromRequest('cover')->toMediaCollection('cover');
+            }
+
+            return redirect()->route('dashboard.post.index')->with('success', 'Artikel berhasil dibuat');
+        } catch (\Throwable $th) {
+            return redirect()->route('admin.course.create')->withInput()->with('error', 'Ada kesalahan !!');
+        }
     }
 
     /**
@@ -83,21 +92,30 @@ class PostController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $request->validate([
-            'name' => 'required|unique:posts,name,' . $id,
-            'body' => 'required',
-            'category' => 'required',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|unique:posts,name,' . $id,
+                'body' => 'required',
+                'category' => 'required',
+            ]);
 
-        $post = Post::findOrFail($id);
-        $post->name = $request->name;
-        $post->body = $request->body;
-        $post->category_id = $request->category;
-        $post->slug = Str::slug($request->name);
-        $post->publishment = $request->publishment == 'on' ? 'published' : 'draft';
-        $post->save();
+            $post = Post::findOrFail($id);
+            $post->name = $request->name;
+            $post->body = $request->body;
+            $post->category_id = $request->category;
+            $post->slug = Str::slug($request->name);
+            $post->publishment = $request->publishment == 'on' ? 'published' : 'draft';
+            $post->save();
 
-        return redirect()->route('dashboard.post.index')->with('success', 'Artikel berhasil diubah');
+            if ($request->hasFile('cover') && $request->file('cover')->isValid()) {
+                $post->clearMediaCollection('cover');
+                $post->addMediaFromRequest('cover')->toMediaCollection('cover');
+            }
+
+            return redirect()->route('dashboard.post.index')->with('success', 'Artikel berhasil diubah');
+        } catch (\Throwable $th) {
+            return redirect()->route('admin.course.create')->withInput()->with('error', 'Ada kesalahan !!');
+        }
     }
 
     /**

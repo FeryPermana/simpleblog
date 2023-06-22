@@ -36,7 +36,7 @@
                     @endforelse
                 </tbody>
             </table>
-            <x-admin.pagination :data="$categories" />
+            <x-pagination :data="$categories" />
         </div>
     </div>
     @include('layouts.partials.publish')
